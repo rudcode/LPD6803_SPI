@@ -6,11 +6,11 @@
 #endif
 
 
-class Neophob_LPD6803 {
+class LPD6803_SPI {
 
  public:
   // Use SPI hardware; specific pins only:
-  Neophob_LPD6803(uint16_t n);
+  LPD6803_SPI(uint16_t n);
 
   void
     begin(uint8_t divider),

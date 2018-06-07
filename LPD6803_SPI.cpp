@@ -7,7 +7,7 @@
 
 #include <TimerOne.h>
 #include "SPI.h"
-#include "Neophob_LPD6803.h"
+#include "LPD6803_SPI.h"
 
 //some local variables, ised in isr
 static uint8_t isDirty;
@@ -17,7 +17,7 @@ static uint16_t *pixelData; //pointer to pixel buffer, we cannot access pixels f
 volatile unsigned char nState=1;
 
 // Constructor for use with hardware SPI (specific clock/data pins):
-Neophob_LPD6803::Neophob_LPD6803(uint16_t n) {
+LPD6803_SPI::LPD6803_SPI(uint16_t n) {
   prettyUglyCopyOfNumPixels = n;  
   numLEDs = n;  
   pixelData = (uint16_t *)malloc(n);
@@ -85,14 +85,14 @@ static void isr() {
 
 
 // Activate hard/soft SPI as appropriate:
-void Neophob_LPD6803::begin(uint8_t divider) {
+void LPD6803_SPI::begin(uint8_t divider) {
   startSPI(divider);
 
   setCPUmax(cpumax);
   Timer1.attachInterrupt(isr);
 }
 
-void Neophob_LPD6803::setCPUmax(uint8_t max) {
+void LPD6803_SPI::setCPUmax(uint8_t max) {
   cpumax = max;
 
   // each clock out takes 20 microseconds max
@@ -104,7 +104,7 @@ void Neophob_LPD6803::setCPUmax(uint8_t max) {
 
 
 // Enable SPI hardware and set up protocol details:
-void Neophob_LPD6803::startSPI(uint8_t divider) {
+void LPD6803_SPI::startSPI(uint8_t divider) {
   SPI.begin();
   SPI.setBitOrder(MSBFIRST);
   SPI.setDataMode(SPI_MODE0);
@@ -123,17 +123,17 @@ void Neophob_LPD6803::startSPI(uint8_t divider) {
   //SPI_A(0); //maybe, move at the end of the startSPI() method
 }
 
-uint16_t Neophob_LPD6803::numPixels(void) {
+uint16_t LPD6803_SPI::numPixels(void) {
   return numLEDs;
 }
 
 
-void Neophob_LPD6803::show(void) {
+void LPD6803_SPI::show(void) {
   isDirty=1; //flag to trigger redraw
 }
 
 
-void Neophob_LPD6803::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
+void LPD6803_SPI::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
   if (n > prettyUglyCopyOfNumPixels) return;
   
     /* As a modest alternative to full double-buffering, the setPixel()
@@ -155,7 +155,7 @@ void Neophob_LPD6803::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b)
 }
 
 //---
-void Neophob_LPD6803::setPixelColor(uint16_t n, uint16_t c) {
+void LPD6803_SPI::setPixelColor(uint16_t n, uint16_t c) {
   if (n > prettyUglyCopyOfNumPixels) return;
 
     /* As a modest alternative to full double-buffering, the setPixel()

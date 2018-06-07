@@ -1,6 +1,6 @@
 #include <TimerOne.h>
 #include <SPI.h>
-#include "Neophob_LPD6803.h"
+#include "LPD6803_SPI.h"
 
 /*
 Unlike software SPI which is configurable, hardware SPI works only on very specific pins. 
@@ -18,7 +18,7 @@ thanks phil!
 
 #define LED_MODULES 20
 
-Neophob_LPD6803 strip = Neophob_LPD6803(LED_MODULES);
+LPD6803_SPI strip = LPD6803_SPI(LED_MODULES);
 
 void setup() {
   //just play with those values!
