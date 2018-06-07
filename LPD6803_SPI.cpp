@@ -1,14 +1,18 @@
-/*********************************************************************************/
-// Example to control LPD6803-based RGB LED Modules in a strand or strip via SPI
-// by Michael Vogt / http://pixelinvaders.ch
-// This Library is basically a copy and paste work and relies on work 
-// of Adafruit-WS2801-Library and FastSPI Library 
-/*********************************************************************************/
+/*********************************************************************************
+ * Example to control LPD6803-based RGB LED Modules in a strand or strip via SPI
+ * by Michael Vogt / http://pixelinvaders.ch
+ * 
+ * Edited by Rudy Nurhadi for faster performance
+ *
+ * This Library is basically a copy and paste work and relies on work 
+ * of Adafruit-WS2801-Library and FastSPI Library 
+ *********************************************************************************/
 
 #include "SPI.h"
 #include "LPD6803_SPI.h"
 
 //some local variables, ised in isr
+static uint16_t indx=0;
 static uint8_t isDirty;
 static uint16_t prettyUglyCopyOfNumPixels;
 static uint16_t *pixelDataCurrent;	//working pointer
@@ -31,56 +35,6 @@ LPD6803_SPI::LPD6803_SPI(uint16_t n) {
 #define SPI_LOAD_BYTE(data) SPDR=data
 /* Wait until last bytes is transmitted. */
 #define SPI_WAIT_TILL_TRANSMITED while(!(SPSR & (1<<SPIF)))
-
-
-//Interrupt routine.
-//Frequency was set in setup(). Called once for every bit of data sent
-//In your code, set global Sendmode to 0 to re-send the data to the pixels
-//Otherwise it will just send clocks.
-static void isr() {
-  static uint16_t indx=0;
-
-  if (nState==1) {
-    //check update color, make sure the data has been validated 
-    if (isDirty==1) { //must we update the pixel value
-	  //SPI_LOAD_BYTE(0);
-	  //SPI_WAIT_TILL_TRANSMITED; 
-	  SPI.transfer(0);	  	  
-      indx = 0;
-      pixelDataCurrent = pixelData; //reset index
-      nState = 0;
-      isDirty = 0;
-      return;
-    }
-    
-    //just send out zeros all the time, used to validate updates and prepare updates
-    SPI.transfer(0);
-	//SPI_LOAD_BYTE(0);
-	//SPI_WAIT_TILL_TRANSMITED; 
-    return;
-  }
-  else { //feed out pixelbuffer
-  	
-  	//First shift in 32bit “0” as start frame, then shift in all data frame, start 
-  	//frame and data frame both are shift by high-bit, every data is input on DCLK rising edge.
-  	
-    register uint16_t command;
-    command = 0x8000 | *(pixelDataCurrent++);       //get current pixel
-  	//SPI_LOAD_BYTE( (command>>8) & 0xFF);
-    //SPI_WAIT_TILL_TRANSMITED;                      	//send 8bits
-    //SPI_LOAD_BYTE( command & 0xFF);
-    //SPI_WAIT_TILL_TRANSMITED;                      	//send 8bits again
-    SPI.transfer( (command>>8) & 0xFF);
-    SPI.transfer( command      & 0xFF);
-
-    if(indx++ >= prettyUglyCopyOfNumPixels) { 
-      nState = 1;
-    }
-
-    return;
-  } 
-}
-
 
 // Activate hard/soft SPI as appropriate:
 void LPD6803_SPI::begin(uint8_t divider) {
@@ -113,7 +67,29 @@ uint16_t LPD6803_SPI::numPixels(void) {
 
 
 void LPD6803_SPI::show(void) {
-  isDirty=1; //flag to trigger redraw
+  SPI.transfer(0);	
+  SPI.transfer(0);
+  indx = 0;
+  pixelDataCurrent = pixelData; //reset index
+  nState = 0;
+  isDirty = 0;
+  
+  while(!nState) {
+    //First shift in 32bit “0” as start frame, then shift in all data frame, start 
+  	//frame and data frame both are shift by high-bit, every data is input on DCLK rising edge.
+    register uint16_t command;
+    command = 0x8000 | *(pixelDataCurrent++);       //get current pixel
+  	//SPI_LOAD_BYTE( (command>>8) & 0xFF);
+    //SPI_WAIT_TILL_TRANSMITED;                      	//send 8bits
+    //SPI_LOAD_BYTE( command & 0xFF);
+    //SPI_WAIT_TILL_TRANSMITED;                      	//send 8bits again
+    SPI.transfer( (command>>8) & 0xFF);
+    SPI.transfer( command      & 0xFF);
+
+    if(indx++ >= prettyUglyCopyOfNumPixels) { 
+      nState = 1;
+    }
+  }
 }
 
 
