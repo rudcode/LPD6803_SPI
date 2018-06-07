@@ -20,6 +20,7 @@
 LPD6803_SPI strip = LPD6803_SPI(LED_MODULES);
 
 void setup() {
+  strip.begin(SPI_CLOCK_DIV16); // 1 Mhz
   strip.show();
 }
 
