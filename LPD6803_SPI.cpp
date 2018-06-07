@@ -5,7 +5,6 @@
 // of Adafruit-WS2801-Library and FastSPI Library 
 /*********************************************************************************/
 
-#include <TimerOne.h>
 #include "SPI.h"
 #include "LPD6803_SPI.h"
 
@@ -21,8 +20,7 @@ LPD6803_SPI::LPD6803_SPI(uint16_t n) {
   prettyUglyCopyOfNumPixels = n;  
   numLEDs = n;  
   pixelData = (uint16_t *)malloc(n);
-  isDirty = 0;    
-  cpumax = 70;
+  isDirty = 0;
   
   //clear buffer
   for (int i=0; i < numLEDs; i++) {
@@ -87,21 +85,7 @@ static void isr() {
 // Activate hard/soft SPI as appropriate:
 void LPD6803_SPI::begin(uint8_t divider) {
   startSPI(divider);
-
-  setCPUmax(cpumax);
-  Timer1.attachInterrupt(isr);
 }
-
-void LPD6803_SPI::setCPUmax(uint8_t max) {
-  cpumax = max;
-
-  // each clock out takes 20 microseconds max
-  long time = 100;
-  time *= 20;   // 20 microseconds per
-  time /= max;    // how long between timers
-  Timer1.initialize(time);
-}
-
 
 // Enable SPI hardware and set up protocol details:
 void LPD6803_SPI::startSPI(uint8_t divider) {
