@@ -8,7 +8,6 @@
 class LPD6803_SPI {
     public:
         LPD6803_SPI(uint16_t n); // Use SPI hardware; specific pins only:
-
         void
             begin(uint8_t divider),
             show(void),
@@ -19,12 +18,7 @@ class LPD6803_SPI {
 
     private:
         uint16_t
-            numLEDs;  
-        uint8_t
-            clkpin    , datapin,     // Clock & data pin numbers
-            clkpinmask, datapinmask; // Clock & data PORT bitmasks
-        volatile uint8_t
-            *clkport  , *dataport;   // Clock & data PORT registers
-        void    
+            numLEDs;
+        void
             startSPI(uint8_t divider);
 };

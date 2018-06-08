@@ -17,17 +17,12 @@
 #define SPI_WAIT_TILL_TRANSMITED while(!(SPSR & (1<<SPIF)))
 
 static uint16_t index = 0;
-static uint16_t prettyUglyCopyOfNumPixels;
-static uint16_t *pixelDataCurrent;	//working pointer
 static uint16_t *pixelData; //pointer to pixel buffer, we cannot access pixels form isr!
-volatile unsigned char nState = 1;
 
 // Constructor for use with hardware SPI (specific clock/data pins):
 LPD6803_SPI::LPD6803_SPI(uint16_t n) {
-    prettyUglyCopyOfNumPixels = n;  
     numLEDs = n;  
     pixelData = (uint16_t *)malloc(n);
-    isDirty = 0;
 
     // Clear buffer
     for (int i = 0; i < numLEDs; i++) {
@@ -69,36 +64,23 @@ uint16_t LPD6803_SPI::numPixels(void) {
 
 void LPD6803_SPI::show(void) {
     SPI.transfer(0);	
+    SPI.transfer(0);	
     SPI.transfer(0);
     index = 0;
-    pixelDataCurrent = pixelData; //reset index
-    nState = 0;
 
-    while(!nState) {
+    while(index++ < numLEDs) {
         /* First shift in 32bit “0” as start frame, then shift in all data frame, start 
         frame and data frame both are shift by high-bit, every data is input on DCLK rising edge. */
         register uint16_t command;
-        command = 0x8000 | *(pixelDataCurrent++); // Get current pixel
+        command = 0x8000 | pixelData[index]; // Get current pixel
         SPI.transfer((command >> 8) & 0xFF);
         SPI.transfer( command       & 0xFF);
-
-        if(index++ >= prettyUglyCopyOfNumPixels) { 
-            nState = 1;
-        }
     }
 }
 
 void LPD6803_SPI::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
-    if (n > prettyUglyCopyOfNumPixels)
+    if (n > numLEDs)
         return;
-
-    /* As a modest alternative to full double-buffering, the setPixel()
-    function blocks until the serial output interrupt has moved past
-    the pixel being modified here.  If the animation-rendering loop
-    functions in reverse (high to low pixel index), then the two can
-    operate together relatively efficiently with only minimal blocking
-    and no second pixel buffer required. */
-    while(nState == 0); 
 
     uint16_t data = g & 0x1F;
     data <<= 5;
@@ -111,16 +93,8 @@ void LPD6803_SPI::setPixelColor(uint16_t n, uint8_t r, uint8_t g, uint8_t b) {
 }
 
 void LPD6803_SPI::setPixelColor(uint16_t n, uint16_t c) {
-    if (n > prettyUglyCopyOfNumPixels)
+    if (n > numLEDs)
         return;
-    
-    /* As a modest alternative to full double-buffering, the setPixel()
-    function blocks until the serial output interrupt has moved past
-    the pixel being modified here.  If the animation-rendering loop
-    functions in reverse (high to low pixel index), then the two can
-    operate together relatively efficiently with only minimal blocking
-    and no second pixel buffer required. */
-    while(nState == 0); 
 
     pixelData[n] = 0x8000 | c; // The first bit of the color word must be set
 }
